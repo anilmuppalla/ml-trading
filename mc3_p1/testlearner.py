@@ -5,9 +5,13 @@ Test a learner.  (c) 2015 Tucker Balch
 import numpy as np
 import math
 import LinRegLearner as lrl
+import sys
 
 if __name__=="__main__":
-    inf = open('Data/ripple.csv')
+    if len(sys.argv) != 2:
+        print "Usage: python -m mc3_p1.testlearner <filename>"
+        sys.exit(1)
+    inf = open(sys.argv[1])
     data = np.array([map(float,s.strip().split(',')) for s in inf.readlines()])
 
     # compute how much of the data is training and testing
