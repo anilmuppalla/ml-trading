@@ -24,15 +24,11 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
 
     # Get daily portfolio value
     prices = prices / prices.ix[0]
-
     prices = prices * allocs
-
     prices = prices * sv
 
     #get row-wise sum
     portfolio_val = prices.sum(axis=1)
-
-    ev = portfolio_val[-1]
 
     # Daily return
     daily_ret = portfolio_val.copy()
@@ -41,6 +37,7 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
 
     # Cumulative
     cum_val = portfolio_val.copy()
+    
     cr = (cum_val[-1]/cum_val[0]) -1
 
     # Avg Daily Return
@@ -51,6 +48,8 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
 
     #Sharpe ratio
     sr = (np.sqrt(sf) * (adr - rfr)) / sddr
+    
+    ev = portfolio_val[-1]
 
     # Compare daily portfolio value with SPY using a normalized plot
     if gen_plot:
