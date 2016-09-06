@@ -16,15 +16,41 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
 
     # Read in adjusted closing prices for given symbols, date range
     dates = pd.date_range(sd, ed)
+
+    #get adj close values for all syms in date range
     prices_all = get_data(syms, dates)  # automatically adds SPY
     prices = prices_all[syms]  # only portfolio symbols
     prices_SPY = prices_all['SPY']  # only SPY, for comparison later
 
     # Get daily portfolio value
-    port_val = prices_SPY # add code here to compute daily portfolio values
+    prices = prices / prices.ix[0]
 
-    # Get portfolio statistics (note: std_daily_ret = volatility)
-    cr, adr, sddr, sr = [0.25, 0.001, 0.0005, 2.1] # add code here to compute stats
+    prices = prices * allocs
+
+    prices = prices * sv
+
+    #get row-wise sum
+    portfolio_val = prices.sum(axis=1)
+
+    ev = portfolio_val[-1]
+
+    # Daily return
+    daily_ret = portfolio_val.copy()
+    daily_ret = (daily_ret/daily_ret.shift(1)) -1
+    daily_ret = daily_ret[1:]
+
+    # Cumulative
+    cum_val = portfolio_val.copy()
+    cr = (cum_val[-1]/cum_val[0]) -1
+
+    # Avg Daily Return
+    adr = daily_ret.mean()
+
+    # Std Daily Return
+    sddr = daily_ret.std()
+
+    #Sharpe ratio
+    sr = (np.sqrt(sf) * (adr - rfr)) / sddr
 
     # Compare daily portfolio value with SPY using a normalized plot
     if gen_plot:
@@ -32,8 +58,7 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
         df_temp = pd.concat([port_val, prices_SPY], keys=['Portfolio', 'SPY'], axis=1)
         pass
 
-    # Add code here to properly compute end value
-    ev = sv
+    # end value = last row in port_val
 
     return cr, adr, sddr, sr, ev
 
@@ -44,10 +69,10 @@ def test_code():
     # Define input parameters
     # Note that ALL of these values will be set to different values by
     # the autograder!
-    start_date = dt.datetime(2009,1,1)
-    end_date = dt.datetime(2010,1,1)
-    symbols = ['GOOG', 'AAPL', 'GLD', 'XOM']
-    allocations = [0.2, 0.3, 0.4, 0.1]
+    start_date = dt.datetime(2010,1,1)
+    end_date = dt.datetime(2010,12,31)
+    symbols = ['AXP', 'HPQ', 'IBM', 'HNZ']
+    allocations = [0.0, 0.0, 0.0, 1.0]
     start_val = 1000000  
     risk_free_rate = 0.0
     sample_freq = 252
