@@ -49,6 +49,7 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
     #Sharpe ratio
     sr = (np.sqrt(sf) * (adr - rfr)) / sddr
     
+    # end value = last row in port_val
     ev = portfolio_val[-1]
 
     # Compare daily portfolio value with SPY using a normalized plot
@@ -56,8 +57,6 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
         # add code to plot here
         df_temp = pd.concat([port_val, prices_SPY], keys=['Portfolio', 'SPY'], axis=1)
         pass
-
-    # end value = last row in port_val
 
     return cr, adr, sddr, sr, ev
 
