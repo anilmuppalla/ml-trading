@@ -31,9 +31,9 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
     portfolio_val = prices.sum(axis=1)
 
     # Daily return
-    daily_ret = portfolio_val.copy()
-    daily_ret = (daily_ret/daily_ret.shift(1)) -1
-    daily_ret = daily_ret[1:]
+    daily_return = portfolio_val.copy()
+    daily_return = (daily_return/daily_return.shift(1)) -1
+    daily_return = daily_return[1:]
 
     # Cumulative
     cum_val = portfolio_val.copy()
@@ -41,10 +41,10 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
     cr = (cum_val[-1]/cum_val[0]) -1
 
     # Avg Daily Return
-    adr = daily_ret.mean()
+    adr = daily_return.mean()
 
     # Std Daily Return
-    sddr = daily_ret.std()
+    sddr = daily_return.std()
 
     #Sharpe ratio
     sr = (np.sqrt(sf) * (adr - rfr)) / sddr
