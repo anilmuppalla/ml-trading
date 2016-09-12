@@ -100,9 +100,9 @@ def test_code():
     # Note that ALL of these values will be set to different values by
     # the autograder!
 
-    start_date = dt.datetime(2010,1,1)
-    end_date = dt.datetime(2010,12,31)
-    symbols = ['GOOG', 'AAPL', 'GLD', 'XOM']
+    start_date = dt.datetime(2008,1,1)
+    end_date = dt.datetime(2009,12,31)
+    symbols = ['IBM', 'X', 'HNZ', 'XOM', 'GLD']
 
     # Assess the portfolio
     allocations, cr, adr, sddr, sr = optimize_portfolio(sd = start_date, ed = end_date,\
