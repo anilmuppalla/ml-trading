@@ -48,8 +48,3 @@ if __name__=="__main__":
     print "RMSE: ", rmse
     c = np.corrcoef(predY, y=testY)
     print "corr: ", c[0,1]
-
-    #learners = []
-    #for i in range(0,10):
-        #kwargs = {"k":i}
-        #learners.append(lrl.LinRegLearner(**kwargs))
