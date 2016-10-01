@@ -9,7 +9,7 @@ import sys
 
 if __name__=="__main__":
     if len(sys.argv) != 2:
-        print "Usage: python -m mc3_p1.testlearner <filename>"
+        print "Usage: python testlearner.py <filename>"
         sys.exit(1)
     inf = open(sys.argv[1])
     data = np.array([map(float,s.strip().split(',')) for s in inf.readlines()])
@@ -48,8 +48,3 @@ if __name__=="__main__":
     print "RMSE: ", rmse
     c = np.corrcoef(predY, y=testY)
     print "corr: ", c[0,1]
-
-    #learners = []
-    #for i in range(0,10):
-        #kwargs = {"k":i}
-        #learners.append(lrl.LinRegLearner(**kwargs))
