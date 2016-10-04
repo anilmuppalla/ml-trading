@@ -20,7 +20,8 @@ class BagLearner(object):
         """
         data = np.concatenate((dataX, dataY[:, None]), axis = 1)
         cols = dataX.shape[1]
-        rows = data.shape[0]
+        rows = int(0.6 * data.shape[0])
+
         dataset = [[0] * rows for i in range(self.bags)]
 
         for i in range(self.bags):
@@ -37,10 +38,10 @@ class BagLearner(object):
         @param points: should be a numpy array with each row corresponding to a specific query.
         @returns the estimated values according to the saved model.
         """
-        predictY = np.empty(shape=(points.shape[0],))
+        predictY = 0.0
         for i in range(0,self.bags):
             predictY += self.learners[i].query(points)
-        predictY = predictY/self.bags
+        predictY = predictY/float(self.bags)
         return predictY
 
 if __name__=="__main__":
