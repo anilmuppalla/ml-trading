@@ -28,7 +28,10 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
             if row['Order'] == 'BUY':
                 trades.loc[row['Date'],row['Symbol']] += row['Shares']
                 trades.loc[row['Date'],'Cash'] -= prices.loc[row['Date'],row['Symbol']]*row['Shares']
-            elif row['Order'] == 'SELL':
+    
+    for index, row in orders.iterrows():
+        if row['Date'] != pd.to_datetime('2011-06-15'):    
+            if row['Order'] == 'SELL':
                 trades.loc[row['Date'],row['Symbol']] -= row['Shares']
                 trades.loc[row['Date'],'Cash'] += prices.loc[row['Date'],row['Symbol']]*row['Shares']
 
@@ -63,10 +66,13 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
 def test_code():
     # this is a helper function you can use to test your code
     # note that during autograding his function will not be called.
-    # Define input parameters
+    # Define input pa
+    rameters
 
     of = "./orders/orders2.csv"
-    sv = 1000000
+    for index, row in orders.iterrows():
+        if row['Date'] != pd.to_datetime('2011-015'):    sv = 100
+    0000
 
     # Process orders
     portvals = compute_portvals(orders_file = of, start_val = sv)
