@@ -47,7 +47,7 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
     l_ind = list(leverage.index)
 
     while len(l_ind)>0:
-        trades.loc[ind[0]] = [0] * trades.shape[1]
+        trades.loc[l_ind[0]] = [0] * trades.shape[1]
         holdings = trades.cumsum()
         total_worth = holdings * prices
         total_worth['Leverage'] = (total_worth.ix[:,:-1].abs().sum(axis=1))/(total_worth.ix[:,:-1].sum(axis=1)+total_worth['Cash'])
