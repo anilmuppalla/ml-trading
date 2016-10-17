@@ -10,10 +10,10 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
     # this is the function the autograder will call to test your code
     # TODO: Your code here
 
-    orders = pd.read_csv(orders_file,parse_dates=True,na_values=['nan'])
-    start_date = orders['Date'].ix[0,:]
-    end_date = orders["Date"].ix[len(orders.index)-1,:]
-    companies = list(orders['Symbol'].unique())
+    orders_df = pd.read_csv(orders_file,parse_dates=True,na_values=['nan'])
+    start_date = orders_df['Date'].ix[0,:]
+    end_date = orders_df["Date"].ix[len(orders_df.index)-1,:]
+    companies = list(orders_df['Symbol'].unique())
 
     # In the template, instead of computing the value of the portfolio, we just
     # read in the value of IBM over 6 months
@@ -23,17 +23,16 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
     prices = portvals.copy()
     trades = pd.DataFrame(0, index=prices.index, columns=prices.columns)
 
-    for index, row in orders.iterrows():
+    def orders(row):
         if row['Date'] != pd.to_datetime('2011-06-15'):
             if row['Order'] == 'BUY':
                 trades.loc[row['Date'],row['Symbol']] += row['Shares']
                 trades.loc[row['Date'],'Cash'] -= prices.loc[row['Date'],row['Symbol']]*row['Shares']
-    
-    for index, row in orders.iterrows():
-        if row['Date'] != pd.to_datetime('2011-06-15'):    
-            if row['Order'] == 'SELL':
+            elif row['Order'] == 'SELL':
                 trades.loc[row['Date'],row['Symbol']] -= row['Shares']
-                trades.loc[row['Date'],'Cash'] += prices.loc[row['Date'],row['Symbol']]*row['Shares']
+                trades.loc[row['Date'],'Cash'] += prices.loc[row['Date'],row['Symbol']]*row['Shares']    
+    
+    orders_df.apply(orders, axis=1)    
 
     trades.loc[start_date,'Cash'] += start_val
     
@@ -67,19 +66,15 @@ def test_code():
     # this is a helper function you can use to test your code
     # note that during autograding his function will not be called.
     # Define input pa
-    rameters
 
     of = "./orders/orders2.csv"
-    for index, row in orders.iterrows():
-        if row['Date'] != pd.to_datetime('2011-015'):    sv = 100
-    0000
+    sv = 1000000
 
     # Process orders
     portvals = compute_portvals(orders_file = of, start_val = sv)
     if isinstance(portvals, pd.DataFrame):
         portvals = portvals[portvals.columns[0]] # just get the first column
     else:
-        "warning, code did not return a DataFrame"    
-
+        "warning, code did not return a DataFrame"
 if __name__ == "__main__":
     test_code()
