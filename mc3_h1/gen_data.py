@@ -13,26 +13,42 @@ def best4LinReg():
     return X, Y
 
 def best4RT():
-    X = np.random.choice(1, size = (200, 3)) 
+    X = np.random.choice(1, size = (200, 4)) 
     Y = np.zeros(shape=(200,))
     for i in xrange(X.shape[0]):
-        x = X[i, :]
-        if x[0]>0 and x[1]>0 and x[2]>0:
-            Y[i] = 1
-        elif x[0]>0 and x[1]>0 and x[2]<=0:
-            Y[i] = 2
-        elif x[0]>0 and x[1]<=0 and x[2]>0:
-            Y[i] = 2
-        elif x[0]>0 and x[1]<=0 and x[2]<=0:
-            Y[i] = 1
-        elif x[0]<=0 and x[1]>0 and x[2]<=0:
-            Y[i] = 1
-        elif x[0]<=0 and x[1]<=0 and x[2]>0:
-            Y[i] = 2
-        elif x[0]<=0 and x[1]<=0 and x[2]<=0:
-            Y[i] = 1
-        elif x[0]<=0 and x[1]>0 and x[2]>0:
-            Y[i] = 2
+	    x = X[i, :]
+	    if x[0] > 0 and x[1] > 0 and x[2] > 0 and x[3] > 0:
+	        Y[i] = 1
+	    elif x[0] > 0 and x[1] > 0 and x[2] > 0 and x[3] <= 0:
+	    	Y[i] = 2
+	    elif x[0] > 0 and x[1] > 0 and x[2] <= 0 and x[3] > 0:
+	    	Y[i] = 3
+	    elif x[0] > 0 and x[1] > 0 and x[2] <= 0 and x[3] <= 0:
+	    	Y[i] = 1
+	    elif x[0] > 0 and x[1] <= 0 and x[2] > 0 and x[3] > 0:
+	    	Y[i] = 2
+	    elif x[0] > 0 and x[1] <= 0 and x[2] > 0 and x[3] <= 0:
+	    	Y[i] = 3
+	    elif x[0] > 0 and x[1] <= 0 and x[2] <= 0 and x[3] > 0:
+	    	Y[i] = 1
+	    elif x[0] > 0 and x[1] <= 0 and x[2] <= 0 and x[3] <= 0:
+	    	Y[i] = 2
+	    elif x[0] <= 0 and x[1] > 0 and x[2] > 0 and x[3] > 0:
+	    	Y[i] = 3
+	    elif x[0] <= 0 and x[1] > 0 and x[2] > 0 and x[3] <= 0:
+	    	Y[i] = 1
+	    elif x[0] <= 0 and x[1] > 0 and x[2] <= 0 and x[3] > 0:
+	    	Y[i] = 2
+	    elif x[0] <= 0 and x[1] > 0 and x[2] <= 0 and x[3] <= 0:
+	    	Y[i] = 3
+	    elif x[0] <= 0 and x[1] <= 0 and x[2] > 0 and x[3] > 0:
+	    	Y[i] = 1
+	    elif x[0] <= 0 and x[1] <= 0 and x[2] > 0 and x[3] <= 0:
+	    	Y[i] = 3
+	    elif x[0] <= 0 and x[1] <= 0 and x[2] <= 0 and x[3] > 0:
+	    	Y[i] = 1
+	    elif x[0] <= 0 and x[1] <= 0 and x[2] <= 0 and x[3] <= 0:
+	    	Y[i] = 3
     return X, Y
 
 if __name__=="__main__":
