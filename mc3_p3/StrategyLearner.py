@@ -48,11 +48,11 @@ class StrategyLearner(object):
         prices_all = ut.get_data([symbol], dates)  # automatically adds SPY
         trades = prices_all[[symbol,]]  # only portfolio symbols
         trades_SPY = prices_all['SPY']  # only SPY, for comparison later
-	trades.values[:,:] = 0 # set them all to nothing
-	trades.values[3,:] = 100 # add a BUY at the 4th date
-	trades.values[5,:] = -100 # add a SELL at the 6th date 
-	trades.values[6,:] = -100 # add a SELL at the 7th date 
-	trades.values[8,:] = -100 # add a SELL at the 9th date
+        trades.values[:,:] = 0 # set them all to nothing
+        trades.values[3,:] = 100 # add a BUY at the 4th date
+        trades.values[5,:] = -100 # add a SELL at the 6th date 
+        trades.values[6,:] = -100 # add a SELL at the 7th date 
+        trades.values[8,:] = -100 # add a SELL at the 9th date
         if self.verbose: print type(trades) # it better be a DataFrame!
         if self.verbose: print trades
         if self.verbose: print prices_all
