@@ -76,7 +76,7 @@ class QLearner(object):
                 dynaction = rand.randint(0,self.num_actions-1)
                 s_new = self.T[dynastate,dynaction,:].argmax()
                 dynaR = self.R[dynastate,dynaction]
-                self.q[dynastate,dynaction] = (1 - self.alphaR) * (self.q[dynastate,dynaction]) + (self.alphaR)*(dynaR + self.gamma*self.q[s_new, :].max())
+                self.q[dynastate,dynaction] = (1 - self.alpha) * (self.q[dynastate,dynaction]) + (self.alpha)*(dynaR + self.gamma*self.q[s_new, :].max())
 
         self.s = s_prime
         self.a = action
