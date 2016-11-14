@@ -31,7 +31,7 @@ class QLearner(object):
         self.T = np.zeros((num_states, num_actions, num_states))
         self.Tc = np.full((num_states, num_actions, num_states), 0.000001)
         self.R = np.zeros((num_states, num_actions))
-        self.alphaR = 0.8
+        self.alphaR = 1
 
     def querysetstate(self, s):
         """
@@ -57,7 +57,7 @@ class QLearner(object):
         @returns: The selected action
         """
         prob = np.random.rand()
-        if prob<self.rar:
+        if prob < self.rar:
             action = rand.randint(0, self.num_actions-1)
         else:
             action = self.q[s_prime,:].argmax()
@@ -67,8 +67,8 @@ class QLearner(object):
         self.q[self.s,self.a] = (1-self.alpha) * self.q[self.s,self.a] + self.alpha * (r + self.gamma * self.q[s_prime, :].max())
 
         if self.dyna > 0:
-            self.Tc[self.s,self.a,s_prime] += 1
-            self.T[self.s,self.a,s_prime] = self.Tc[self.s,self.a,s_prime]/self.Tc[self.s,self.a,:].sum()
+            self.Tc[self.s,self.a,s_prime] = self.Tc[self.s,self.a,s_prime] + 1
+            self.T[self.s,self.a,s_prime] = self.Tc[self.s,self.a,s_prime] / self.Tc[self.s,self.a,:].sum()
             self.R[self.s,self.a] = (1 - self.alpha)*(self.R[self.s,self.a]) + (self.alpha*r)
         
             for i in xrange(self.dyna):
