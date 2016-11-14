@@ -31,7 +31,7 @@ class QLearner(object):
         self.T = np.zeros((num_states, num_actions, num_states))
         self.Tc = np.full((num_states, num_actions, num_states), 0.000001)
         self.R = np.zeros((num_states, num_actions))
-        self.alphaR = 0.9
+        self.alphaR = 0.8
 
     def querysetstate(self, s):
         """
