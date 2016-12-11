@@ -14,6 +14,30 @@ class StrategyLearner(object):
     def __init__(self, verbose = False):
         self.verbose = verbose
 
+    def indicators(self, prices, lookback):
+        sma = pd.rolling_mean(prices, window=lookback)
+        psmaratio = prices / sma
+        # print psmaratio
+        # Momentum
+        momentum = prices.copy()
+        momentum[:] = 0
+        momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
+        return psmaratio, momentum
+    
+    def discindicators(self, prices, psmaratio, momentum):
+   
+        steps = 10
+        stepsize = len(prices) / steps
+        self.thresholdPsmaratio = range(0, steps-1)
+        data = psmaratio.sort_values()
+        for i in range(0, steps-1):
+            self.thresholdPsmaratio[i] = data[int(i * stepsize)]
+             
+        self.thresholdMomentum = range(0, steps-1)
+        data = momentum.sort_values()
+        for i in range(0, steps-1):
+            self.thresholdMomentum[i] = data[int(i * stepsize)]
+        
     # this method should create a QLearner, and train it for trading
     def addEvidence(self, symbol = "IBM", \
         sd=dt.datetime(2008,1,1), \
@@ -37,58 +61,18 @@ class StrategyLearner(object):
         prices = prices_all[symbol]  # only portfolio symbol
         
         if self.verbose: print prices
-
-        # Price/SMA
-        sma = pd.rolling_mean(prices, window=lookback)
-        psmaratio = prices / sma
+        
+        psmaratio, momentum = self.indicators(prices, lookback)
+        
         psmaratio = psmaratio[sd:]
-        # print psmaratio
-        # Momentum
-        momentum = prices.copy()
-        momentum[:] = 0
-        momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
         momentum = momentum[sd:]
-        
-        # Ulcer Index
-        # pdrawdown = prices.copy()
-        # pdrawdown[:] = 0
-        # maximum = pd.rolling_max(prices, window=lookback)
-        # pdrawdown[1:] = (prices[1:] - maximum[:-1].values) / maximum[:-1].values * 100
-        
-        # sq = pdrawdown * pdrawdown
-        # sqa = pd.rolling_sum(sq, window=lookback) / lookback
-        
-        # ulceridx = prices.copy()
-        # ulceridx[:] = 0
-        # ulceridx[1:] = np.sqrt(sqa[:-1].values)
-        # ulceridx = ulceridx[sd:]
-
         prices = prices[sd:]
 
-        steps = 10
-        stepsize = len(prices) / steps
-        print stepsize
-        self.thresholdPsmaratio = range(0, steps-1)
-        data = psmaratio.sort_values()
-        print data
-        for i in range(0, steps-1):
-            self.thresholdPsmaratio[i] = data[int(i * stepsize)]
-        print self.thresholdPsmaratio
-        print psmaratio
+        self.discindicators(prices, psmaratio, momentum)
+
         discPsmaratio = np.searchsorted(self.thresholdPsmaratio, psmaratio, side='left')
-        print discPsmaratio
-
-        self.thresholdMomentum = range(0, steps-1)
-        data = momentum.sort_values()
-        for i in range(0, steps-1):
-            self.thresholdMomentum[i] = data[int(i * stepsize)]
+        
         discMomentum = np.searchsorted(self.thresholdMomentum, momentum, side='left')
-
-        # self.thresholdUlceridx = range(0, steps-1)
-        # data = ulceridx.sort_values()
-        # for i in range(0, steps-1):
-        #     self.thresholdUlceridx[i] = data[int(i * stepsize)]
-        # discUlceridx = np.searchsorted(self.thresholdUlceridx, ulceridx, side='left')
 
         count = 0
         totrewardlast = 0
@@ -159,29 +143,12 @@ class StrategyLearner(object):
         prices = prices_all[symbol]  # only portfolio symbols
         if self.verbose: print prices
 
-        # Price/SMA
-        sma = pd.rolling_mean(prices, window=lookback)
-        psmaratio = prices / sma
+        psmaratio, momentum = self.indicators(prices, lookback)
+        
         psmaratio = psmaratio[sd:]
-        # Momentum
-        momentum = prices.copy()
-        momentum[:] = 0
-        momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
         momentum = momentum[sd:]
-        # # Ulcer Index
-        # pdrawdown = prices.copy()
-        # pdrawdown[:] = 0
-        # maximum = pd.rolling_max(prices, window=lookback)
-        # pdrawdown[1:] = (prices[1:] - maximum[:-1].values) / maximum[:-1].values * 100
-        # sq = pdrawdown * pdrawdown
-        # sqa = pd.rolling_sum(sq, window=lookback) / lookback
-        # ulceridx = prices.copy()
-        # ulceridx[:] = 0
-        # ulceridx[1:] = np.sqrt(sqa[:-1].values)
-        # ulceridx = ulceridx[sd:]
-
         prices = prices[sd:]
-
+        
         discPsmaratio = np.searchsorted(self.thresholdPsmaratio, psmaratio, side='left')
         discMomentum = np.searchsorted(self.thresholdMomentum, momentum, side='left')
 
