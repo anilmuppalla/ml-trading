@@ -15,6 +15,9 @@ class StrategyLearner(object):
         self.verbose = verbose
 
     def indicators(self, prices, lookback, sd, ed):
+        """
+        return : prices, psma, momentum
+        """
         sma = pd.rolling_mean(prices, window=lookback)
         psmaratio = prices / sma
         # print psmaratio
@@ -30,7 +33,9 @@ class StrategyLearner(object):
         return prices, psmaratio, momentum
 
     def disc_learn_indicators(self, prices, lookback, sd, ed):
-        
+        """
+        return : discretised indicators for learn
+        """
         prices, psmaratio, momentum = self.indicators(prices, lookback, sd, ed)
         steps = 10
         stepsize = len(prices) / steps
@@ -56,7 +61,9 @@ class StrategyLearner(object):
         return indicators    
 
     def disc_test_indicators(self, prices, lookback, sd, ed):
-
+        """
+        return discretized indicators for test
+        """
         prices, psmaratio, momentum = self.indicators(prices, lookback, sd, ed)
 
         psma_bin = np.searchsorted(self.psma_bins, psmaratio, side='left')
@@ -92,55 +99,55 @@ class StrategyLearner(object):
         
         if self.verbose: print prices
 
+        # discretised indicators
         disc_indicators = self.disc_learn_indicators(prices, lookback, sd, ed)
 
+        #prices from start date
         prices = prices[sd:]
 
         count = 0
         prev_portval = 0
         converged = False
         while not converged and count < 1000:
-            holding = 0
+            shares_holding = 0
             cash = sv
             portval = 0
-            # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
-            prev_action = 1  # prev_action = -1: short, prev_action = 0: nothing, prev_action = 1: long
+            prev_action = 1 # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long 
             x = disc_indicators[0]
             action = self.learner.querysetstate(x)
             for i in range(1,len(prices)):
-                trade = 0
                 if action == 0:  # Be Short
                     if prev_action == 1:
-                        holding -= 500
+                        shares_holding -= 500
                         cash += prices[i] * 500
                     elif prev_action == 2:
-                        holding -= 1000
+                        shares_holding -= 1000
                         cash += prices[i] * 1000
                     prev_action = 0
                    
                 elif action == 1:  # Be Nothing
                     if prev_action == 0:
-                        holding += 500
+                        shares_holding += 500
                         cash -= prices[i] * 500
                     elif prev_action == 2:
-                        holding -= 500
+                        shares_holding -= 500
                         cash += prices[i] * 500
                     prev_action = 1
                    
                 elif action == 2:  # Be Long
                     if prev_action == 0:
-                        holding += 1000
+                        shares_holding += 1000
                         cash -= prices[i] * 1000
                     elif prev_action == 1:
-                        holding += 500
+                        shares_holding += 500
                         cash -= prices[i] * 500
                     prev_action = 2
                    
                 if i + 1 != len(prices):
-                    value = prices[i] * holding
+                    value = prices[i] * shares_holding
                     portvalcurrent = value + cash
 
-                    value = prices[i+1] * holding
+                    value = prices[i+1] * shares_holding
                     portval = value + cash
 
                     r = portval / portvalcurrent - 1
@@ -148,7 +155,7 @@ class StrategyLearner(object):
 
                     action = self.learner.query(x, r)
 
-              # calculate portfolio value
+              # check for convergence
             if prev_portval == portval and count > 50:
                 converged = True
             prev_portval = portval
@@ -174,8 +181,7 @@ class StrategyLearner(object):
         df_trades = prices.copy()
         df_trades[:] = 0
 
-        holding = 0
-        trade = 0
+        shares_holding = 0
         value = 0
         cash = sv
         prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
@@ -187,11 +193,11 @@ class StrategyLearner(object):
             if action == 0:
                 if prev_action == 1:
                     df_trades[i] = -500
-                    holding -= 500
+                    shares_holding -= 500
                     cash += prices[i] * 500
                 elif prev_action == 2:
                     df_trades[i] = -1000
-                    holding -= 1000
+                    shares_holding -= 1000
                     cash += prices[i] * 1000
                 prev_action = 0
             
@@ -199,11 +205,11 @@ class StrategyLearner(object):
             elif action == 1:
                 if prev_action == 0:
                     df_trades[i] = 500
-                    holding += 500
+                    shares_holding += 500
                     cash -= prices[i] * 500
                 elif prev_action == 2:
                     df_trades[i] = -500
-                    holding -= 500
+                    shares_holding -= 500
                     cash += prices[i] * 500
                 prev_action = 1
             
@@ -211,71 +217,28 @@ class StrategyLearner(object):
             elif action == 2:
                 if prev_action == 0:
                     df_trades[i] = 1000
-                    holding += 1000
+                    shares_holding += 1000
                     cash -= prices[i] * 1000
                 elif prev_action == 1:
                     df_trades[i] = 500
-                    holding += 500
+                    shares_holding += 500
                     cash -= prices[i] * 500
                 prev_action = 2
 
-            if i +1 != len(prices):
+            if i+1 != len(prices):
 
-                value = prices[i] * holding
+                value = prices[i] * shares_holding
                 portvalcurrent = value + cash
 
-                value = prices[i+1]*holding
+                value = prices[i+1]*shares_holding
                 portval = value + cash
 
                 r = portval/portvalcurrent - 1
                 x = disc_indicators[i]
 
                 action = self.learner.query(x, r)
-            # if action == 0:  # Be Short
-            #     if prev_action == -1:
-            #         trade = 0
-            #     elif prev_action == 0:
-            #         trade = -500
-            #     elif prev_action == 1:
-            #         trade = -1000
-            #     prev_action = -1
-            # elif action == 1:  # Be Nothing
-            #     if prev_action == -1:
-            #         trade = 500
-            #     elif prev_action == 0:
-            #         trade = 0
-            #     elif prev_action == 1:
-            #         trade = -500
-            #     prev_action = 0
-            # elif action == 2:  # Be Long
-            #     if prev_action == -1:
-            #         trade = 1000
-            #     elif prev_action == 0:
-            #         trade = 500
-            #     elif prev_action == 1:
-            #         trade = 0
-            #     prev_action = 1
-            # df_trades[i] = trade
-            # if i < (len(prices) - 1):
-            #     holding = holding + trade
-            #     # print "holding: ", holding
-            #     value = prices[i] * holding
-            #     # print "value: ", value
-            #     cash = cash - prices[i] * trade
-            #     # print "cash: ", cash
-            #     portvalcurrent = value + cash
-            #     value = prices[i + 1] * holding
-            #     portval = value + cash
-            #     # print "portval: ", portval
-            #     # print "portvalcurrent: ", portvalcurrent
-                
-            #     r = portval / portvalcurrent - 1
 
-            #     x = disc_indicators[i]
-            #     action = self.learner.query(x, r)
-
-        # print portval
         return df_trades.to_frame()
 
 if __name__ == "__main__":
-    print "One does not simply think up a strategy"
+    print "Strategy! Strategy! Strategy!"
