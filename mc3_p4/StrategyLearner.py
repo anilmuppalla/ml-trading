@@ -112,9 +112,10 @@ class StrategyLearner(object):
             shares_holding = 0
             cash = sv
             portval = 0
-            prev_action = 1 # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long 
-            x = disc_indicators[0]
-            action = self.learner.querysetstate(x)
+            # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long 
+            prev_action = 1 # start with do nothing
+            state = disc_indicators[0]
+            action = self.learner.querysetstate(state)
             for i in range(1,len(prices)):
                 if action == 0:  # Be Short
                     if prev_action == 1:
@@ -144,16 +145,16 @@ class StrategyLearner(object):
                     prev_action = 2
                    
                 if i + 1 != len(prices):
-                    value = prices[i] * shares_holding
-                    portvalcurrent = value + cash
+                    current_value = prices[i] * shares_holding
+                    portvalcurrent = current_value + cash
 
                     value = prices[i+1] * shares_holding
                     portval = value + cash
 
-                    r = portval / portvalcurrent - 1
-                    x = disc_indicators[i]
+                    reward = portval / portvalcurrent - 1
+                    state = disc_indicators[i]
 
-                    action = self.learner.query(x, r)
+                    action = self.learner.query(state, reward)
 
               # check for convergence
             if prev_portval == portval and count > 50:
@@ -161,7 +162,6 @@ class StrategyLearner(object):
             prev_portval = portval
             count += 1
 
-    # this method should use the existing policy and test it against new data
     def testPolicy(self, symbol = "IBM", \
         sd=dt.datetime(2009,1,1), \
         ed=dt.datetime(2010,1,1), \
@@ -174,6 +174,7 @@ class StrategyLearner(object):
         prices = prices_all[symbol]  # only portfolio symbols
         if self.verbose: print prices
         
+        # discretized indicators for test using the bins from learning
         disc_indicators = self.disc_test_indicators(prices, lookback, sd, ed)
 
         prices = prices[sd:]
@@ -182,11 +183,11 @@ class StrategyLearner(object):
         df_trades[:] = 0
 
         shares_holding = 0
-        value = 0
+        # value = 0
         cash = sv
         prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
-        x = disc_indicators[0]
-        action = self.learner.querysetstate(x)
+        state = disc_indicators[0]
+        action = self.learner.querysetstate(state)
         for i in range(1, len(prices)):
             df_trades[i] = 0
             #Short
@@ -227,16 +228,16 @@ class StrategyLearner(object):
 
             if i+1 != len(prices):
 
-                value = prices[i] * shares_holding
-                portvalcurrent = value + cash
+                current_value = prices[i] * shares_holding
+                portvalcurrent = current_value + cash
 
-                value = prices[i+1]*shares_holding
+                value = prices[i+1] * shares_holding
                 portval = value + cash
 
-                r = portval/portvalcurrent - 1
-                x = disc_indicators[i]
+                reward = portval/portvalcurrent - 1
+                state = disc_indicators[i]
 
-                action = self.learner.query(x, r)
+                action = self.learner.query(state, reward)
 
         return df_trades.to_frame()
 
