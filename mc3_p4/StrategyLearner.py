@@ -37,6 +37,8 @@ class StrategyLearner(object):
         return : discretised indicators for learn
         """
         prices, psmaratio, momentum = self.indicators(prices, lookback, sd, ed)
+        
+        # Discreatizing by Prof. Balch Method
         steps = 10
         stepsize = len(prices) / steps
         
@@ -128,14 +130,14 @@ class StrategyLearner(object):
                     prev_action = 0
                 
                 # Do Nothing   
-                elif action == 1:
-                    if prev_action == 0:
-                        shares_holding += 500
-                        cash -= prices[i] * 500
-                    elif prev_action == 2:
-                        shares_holding -= 500
-                        cash += prices[i] * 500
-                    prev_action = 1
+                # elif action == 1:
+                #     if prev_action == 0:
+                #         shares_holding += 500
+                #         cash -= prices[i] * 500
+                #     elif prev_action == 2:
+                #         shares_holding -= 500
+                #         cash += prices[i] * 500
+                #     prev_action = 1
                    
                 # Long
                 elif action == 2:
