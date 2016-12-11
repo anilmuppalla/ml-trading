@@ -117,7 +117,8 @@ class StrategyLearner(object):
             state = disc_indicators[0]
             action = self.learner.querysetstate(state)
             for i in range(1,len(prices)):
-                if action == 0:  # Be Short
+                # Short
+                if action == 0:
                     if prev_action == 1:
                         shares_holding -= 500
                         cash += prices[i] * 500
@@ -125,8 +126,9 @@ class StrategyLearner(object):
                         shares_holding -= 1000
                         cash += prices[i] * 1000
                     prev_action = 0
-                   
-                elif action == 1:  # Be Nothing
+                
+                # Do Nothing   
+                elif action == 1:
                     if prev_action == 0:
                         shares_holding += 500
                         cash -= prices[i] * 500
@@ -135,7 +137,8 @@ class StrategyLearner(object):
                         cash += prices[i] * 500
                     prev_action = 1
                    
-                elif action == 2:  # Be Long
+                # Long
+                elif action == 2:
                     if prev_action == 0:
                         shares_holding += 1000
                         cash -= prices[i] * 1000
@@ -183,11 +186,13 @@ class StrategyLearner(object):
         df_trades[:] = 0
 
         shares_holding = 0
-        # value = 0
         cash = sv
+        
         prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
+        
         state = disc_indicators[0]
         action = self.learner.querysetstate(state)
+        
         for i in range(1, len(prices)):
             df_trades[i] = 0
             #Short
