@@ -31,9 +31,11 @@ class StrategyLearner(object):
 
         lookback = 14
         syms=[symbol]
+
         dates = pd.date_range(sd - dt.timedelta(lookback*3), ed)  # get extra data for lookback period
         prices_all = ut.get_data(syms, dates)  # automatically adds SPY
         prices = prices_all[symbol]  # only portfolio symbol
+        
         if self.verbose: print prices
 
         # Price/SMA
@@ -46,17 +48,20 @@ class StrategyLearner(object):
         momentum[:] = 0
         momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
         momentum = momentum[sd:]
+        
         # Ulcer Index
-        pdrawdown = prices.copy()
-        pdrawdown[:] = 0
-        maximum = pd.rolling_max(prices, window=lookback)
-        pdrawdown[1:] = (prices[1:] - maximum[:-1].values) / maximum[:-1].values * 100
-        sq = pdrawdown * pdrawdown
-        sqa = pd.rolling_sum(sq, window=lookback) / lookback
-        ulceridx = prices.copy()
-        ulceridx[:] = 0
-        ulceridx[1:] = np.sqrt(sqa[:-1].values)
-        ulceridx = ulceridx[sd:]
+        # pdrawdown = prices.copy()
+        # pdrawdown[:] = 0
+        # maximum = pd.rolling_max(prices, window=lookback)
+        # pdrawdown[1:] = (prices[1:] - maximum[:-1].values) / maximum[:-1].values * 100
+        
+        # sq = pdrawdown * pdrawdown
+        # sqa = pd.rolling_sum(sq, window=lookback) / lookback
+        
+        # ulceridx = prices.copy()
+        # ulceridx[:] = 0
+        # ulceridx[1:] = np.sqrt(sqa[:-1].values)
+        # ulceridx = ulceridx[sd:]
 
         prices = prices[sd:]
 
@@ -79,11 +84,11 @@ class StrategyLearner(object):
             self.thresholdMomentum[i] = data[int(i * stepsize)]
         discMomentum = np.searchsorted(self.thresholdMomentum, momentum, side='left')
 
-        self.thresholdUlceridx = range(0, steps-1)
-        data = ulceridx.sort_values()
-        for i in range(0, steps-1):
-            self.thresholdUlceridx[i] = data[int(i * stepsize)]
-        discUlceridx = np.searchsorted(self.thresholdUlceridx, ulceridx, side='left')
+        # self.thresholdUlceridx = range(0, steps-1)
+        # data = ulceridx.sort_values()
+        # for i in range(0, steps-1):
+        #     self.thresholdUlceridx[i] = data[int(i * stepsize)]
+        # discUlceridx = np.searchsorted(self.thresholdUlceridx, ulceridx, side='left')
 
         count = 0
         totrewardlast = 0
@@ -96,7 +101,7 @@ class StrategyLearner(object):
             cash = sv
             portval = 0
             pos = 0  # pos = -1: short, pos = 0: nothing, pos = 1: long
-            x = discretize(discPsmaratio[0], discMomentum[0], discUlceridx[0])
+            x = discretize(discPsmaratio[0], discMomentum[0])
             action = self.learner.querysetstate(x)
             for i in range(1,len(prices)):
                 if action == 0:  # Be Short
@@ -132,7 +137,7 @@ class StrategyLearner(object):
                     portval = value + cash
                     r = portval/portvalcurrent - 1
 
-                    x = discretize(discPsmaratio[i], discMomentum[i], discUlceridx[i])
+                    x = discretize(discPsmaratio[i], discMomentum[i])
                     action = self.learner.query(x, r)
             totreward = portval  # calculate portfolio value
             count += 1
@@ -163,23 +168,22 @@ class StrategyLearner(object):
         momentum[:] = 0
         momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
         momentum = momentum[sd:]
-        # Ulcer Index
-        pdrawdown = prices.copy()
-        pdrawdown[:] = 0
-        maximum = pd.rolling_max(prices, window=lookback)
-        pdrawdown[1:] = (prices[1:] - maximum[:-1].values) / maximum[:-1].values * 100
-        sq = pdrawdown * pdrawdown
-        sqa = pd.rolling_sum(sq, window=lookback) / lookback
-        ulceridx = prices.copy()
-        ulceridx[:] = 0
-        ulceridx[1:] = np.sqrt(sqa[:-1].values)
-        ulceridx = ulceridx[sd:]
+        # # Ulcer Index
+        # pdrawdown = prices.copy()
+        # pdrawdown[:] = 0
+        # maximum = pd.rolling_max(prices, window=lookback)
+        # pdrawdown[1:] = (prices[1:] - maximum[:-1].values) / maximum[:-1].values * 100
+        # sq = pdrawdown * pdrawdown
+        # sqa = pd.rolling_sum(sq, window=lookback) / lookback
+        # ulceridx = prices.copy()
+        # ulceridx[:] = 0
+        # ulceridx[1:] = np.sqrt(sqa[:-1].values)
+        # ulceridx = ulceridx[sd:]
 
         prices = prices[sd:]
 
         discPsmaratio = np.searchsorted(self.thresholdPsmaratio, psmaratio, side='left')
         discMomentum = np.searchsorted(self.thresholdMomentum, momentum, side='left')
-        discUlceridx = np.searchsorted(self.thresholdUlceridx, ulceridx, side='left')
 
         df_trades = prices.copy()
         df_trades[:] = 0
@@ -189,7 +193,7 @@ class StrategyLearner(object):
         value = 0
         cash = sv
         pos = 0  # pos = -1: short, pos = 0: nothing, pos = 1: long
-        x = discretize(discPsmaratio[0], discMomentum[0], discUlceridx[0])
+        x = discretize(discPsmaratio[0], discMomentum[0])
         action = self.learner.querysetstate(x)
         for i in range(1, len(prices)):
             if action == 0:  # Be Short
@@ -232,15 +236,15 @@ class StrategyLearner(object):
                 
                 r = portval / portvalcurrent - 1
 
-                x = discretize(discPsmaratio[i], discMomentum[i], discUlceridx[i])
+                x = discretize(discPsmaratio[i], discMomentum[i])
                 action = self.learner.query(x, r)
 
         # print portval
         return df_trades.to_frame()
 
 
-def discretize(psma, mom, ulc):
-    return psma*100 + mom*10 + ulc
+def discretize(psma, mom):
+    return psma*10 + mom
 
 if __name__ == "__main__":
     print "One does not simply think up a strategy"
