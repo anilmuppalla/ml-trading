@@ -23,21 +23,43 @@ class StrategyLearner(object):
         momentum[:] = 0
         momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
         return psmaratio, momentum
-    
-    def discindicators(self, prices, psmaratio, momentum):
+
+    def disc_learn_indicators(self, prices, psmaratio, momentum):
    
         steps = 10
         stepsize = len(prices) / steps
-        self.thresholdPsmaratio = range(0, steps-1)
+        
+        self.psma_bins = range(0, steps-1)
+        self.momentum_bins = range(0, steps-1)
+        
         data = psmaratio.sort_values()
         for i in range(0, steps-1):
-            self.thresholdPsmaratio[i] = data[int(i * stepsize)]
+            self.psma_bins[i] = data[int(i * stepsize)]
              
-        self.thresholdMomentum = range(0, steps-1)
         data = momentum.sort_values()
         for i in range(0, steps-1):
-            self.thresholdMomentum[i] = data[int(i * stepsize)]
-        
+            self.momentum_bins[i] = data[int(i * stepsize)]
+
+        psma_bin = np.searchsorted(self.psma_bins, psmaratio, side='left')
+        momentum_bin = np.searchsorted(self.momentum_bins, momentum, side='left')  
+
+        indicators = []
+        for i in range(len(psma_bin)):
+            indicators.append(psma_bin[i]*10 + momentum_bin[i])
+
+        return indicators    
+
+    def disc_test_indicators(self, prices, psmaratio, momentum):
+
+        psma_bin = np.searchsorted(self.psma_bins, psmaratio, side='left')
+        momentum_bin = np.searchsorted(self.momentum_bins, momentum, side='left')  
+
+        indicators = []
+        for i in range(len(psma_bin)):
+            indicators.append(psma_bin[i]*10 + momentum_bin[i])
+
+        return indicators 
+
     # this method should create a QLearner, and train it for trading
     def addEvidence(self, symbol = "IBM", \
         sd=dt.datetime(2008,1,1), \
@@ -69,11 +91,7 @@ class StrategyLearner(object):
         momentum = momentum[sd:]
         prices = prices[sd:]
 
-        self.discindicators(prices, psmaratio, momentum)
-
-        discPsmaratio = np.searchsorted(self.thresholdPsmaratio, psmaratio, side='left')
-        
-        discMomentum = np.searchsorted(self.thresholdMomentum, momentum, side='left')
+        disc_indicators = self.disc_learn_indicators(prices, psmaratio, momentum)
 
         count = 0
         totrewardlast = 0
@@ -86,44 +104,71 @@ class StrategyLearner(object):
             cash = sv
             portval = 0
             pos = 0  # pos = -1: short, pos = 0: nothing, pos = 1: long
-            x = discretize(discPsmaratio[0], discMomentum[0])
+            x = disc_indicators[0]
             action = self.learner.querysetstate(x)
             for i in range(1,len(prices)):
+                trade = 0
                 if action == 0:  # Be Short
-                    if pos == -1:
-                        trade = 0
-                    elif pos == 0:
-                        trade = -500
+                    # if pos == -1:
+                    #     trade = 0
+                    if pos == 0:
+                        # trade = -500
+                        holding -= 500
+                        cash += prices[i] * 500
                     elif pos == 1:
-                        trade = -1000
+                        # trade = -1000
+                        holding -= 1000
+                        cash += prices[i] * 1000
                     pos = -1
+                    # holding = holding + trade
+                    # value = prices[i] * holding
+                    # cash = cash - prices[i] * trade
+                
                 elif action == 1:  # Be Nothing
                     if pos == -1:
-                        trade = 500
-                    elif pos == 0:
-                        trade = 0
+                        # trade = 500
+                        holding += 500
+                        cash -= prices[i] * 500
+                    # elif pos == 0:
+                    #     trade = 0
                     elif pos == 1:
-                        trade = -500
+                        # trade = -500
+                        holding -= 500
+                        cash += prices[i] * 500
                     pos = 0
+                    # holding = holding + trade
+                    # value = prices[i] * holding
+                    # cash = cash - prices[i] * trade
+                
                 elif action == 2:  # Be Long
                     if pos == -1:
-                        trade = 1000
+                        # trade = 1000
+                        holding += 1000
+                        cash -= prices[i] * 1000
                     elif pos == 0:
-                        trade = 500
-                    elif pos == 1:
-                        trade = 0
+                        holding += 500
+                        cash -= prices[i] * 500
+                        # trade = 500
+                    # elif pos == 1:
+                    #     trade = 0
                     pos = 1
+                    # holding = holding + trade
+                    # value = prices[i] * holding
+                    # cash = cash - prices[i]*trade
+
                 if i < (len(prices) - 1):
-                    holding = holding + trade
-                    value = prices[i]*holding
-                    cash = cash - prices[i]*trade
+                    # holding = holding + trade
+                    value = prices[i] * holding
                     portvalcurrent = value + cash
+
                     value = prices[i+1]*holding
                     portval = value + cash
-                    r = portval/portvalcurrent - 1
 
-                    x = discretize(discPsmaratio[i], discMomentum[i])
+                    r = portval/portvalcurrent - 1
+                    x = disc_indicators[i]
+
                     action = self.learner.query(x, r)
+
             totreward = portval  # calculate portfolio value
             count += 1
 
@@ -150,8 +195,7 @@ class StrategyLearner(object):
         momentum = momentum[sd:]
         prices = prices[sd:]
         
-        discPsmaratio = np.searchsorted(self.thresholdPsmaratio, psmaratio, side='left')
-        discMomentum = np.searchsorted(self.thresholdMomentum, momentum, side='left')
+        disc_indicators = self.disc_test_indicators(prices, psmaratio, momentum)
 
         df_trades = prices.copy()
         df_trades[:] = 0
@@ -161,58 +205,103 @@ class StrategyLearner(object):
         value = 0
         cash = sv
         pos = 0  # pos = -1: short, pos = 0: nothing, pos = 1: long
-        x = discretize(discPsmaratio[0], discMomentum[0])
+        x = disc_indicators[0]
         action = self.learner.querysetstate(x)
         for i in range(1, len(prices)):
-            if action == 0:  # Be Short
-                if pos == -1:
-                    trade = 0
-                elif pos == 0:
-                    trade = -500
-                elif pos == 1:
-                    trade = -1000
-                pos = -1
-            elif action == 1:  # Be Nothing
-                if pos == -1:
-                    trade = 500
-                elif pos == 0:
-                    trade = 0
-                elif pos == 1:
-                    trade = -500
-                pos = 0
-            elif action == 2:  # Be Long
-                if pos == -1:
-                    trade = 1000
-                elif pos == 0:
-                    trade = 500
-                elif pos == 1:
-                    trade = 0
-                pos = 1
-            df_trades[i] = trade
-            if i < (len(prices) - 1):
-                holding = holding + trade
-                # print "holding: ", holding
-                value = prices[i] * holding
-                # print "value: ", value
-                cash = cash - prices[i] * trade
-                # print "cash: ", cash
-                portvalcurrent = value + cash
-                value = prices[i + 1] * holding
-                portval = value + cash
-                # print "portval: ", portval
-                # print "portvalcurrent: ", portvalcurrent
-                
-                r = portval / portvalcurrent - 1
+            df_trades[i] = 0
 
-                x = discretize(discPsmaratio[i], discMomentum[i])
+            #Short
+            if action == 0:
+
+                if pos == 0:
+                    df_trades[i] = -500
+                    holding -= 500
+                    cash += prices[i] * 500
+                elif pos == 1:
+                    df_trades[i] = -1000
+                    holding -= 1000
+                    cash += prices[i] * 1000
+                pos = -1
+            #Do Nothing
+            elif action == 1:
+                if pos == -1:
+                    df_trades[i] = 500
+                    holding += 500
+                    cash -= prices[i] * 500
+                elif pos == 1:
+                    df_trades[i] = -500
+                    holding -= 500
+                    cash += prices[i] * 500
+                pos = 0
+            #Long
+            elif action == 2:
+                if pos == -1:
+                    df_trades[i] = 1000
+                    holding += 1000
+                    cash -= prices[i] * 1000
+                elif pos == 0:
+                    df_trades[i] = 500
+                    holding += 500
+                    cash -= prices[i] * 500
+                pos = 1
+
+            if i +1 != len(prices):
+
+                value = prices[i] * holding
+                portvalcurrent = value + cash
+
+                value = prices[i+1]*holding
+                portval = value + cash
+
+                r = portval/portvalcurrent - 1
+                x = disc_indicators[i]
+
                 action = self.learner.query(x, r)
+            # if action == 0:  # Be Short
+            #     if pos == -1:
+            #         trade = 0
+            #     elif pos == 0:
+            #         trade = -500
+            #     elif pos == 1:
+            #         trade = -1000
+            #     pos = -1
+            # elif action == 1:  # Be Nothing
+            #     if pos == -1:
+            #         trade = 500
+            #     elif pos == 0:
+            #         trade = 0
+            #     elif pos == 1:
+            #         trade = -500
+            #     pos = 0
+            # elif action == 2:  # Be Long
+            #     if pos == -1:
+            #         trade = 1000
+            #     elif pos == 0:
+            #         trade = 500
+            #     elif pos == 1:
+            #         trade = 0
+            #     pos = 1
+            # df_trades[i] = trade
+            # if i < (len(prices) - 1):
+            #     holding = holding + trade
+            #     # print "holding: ", holding
+            #     value = prices[i] * holding
+            #     # print "value: ", value
+            #     cash = cash - prices[i] * trade
+            #     # print "cash: ", cash
+            #     portvalcurrent = value + cash
+            #     value = prices[i + 1] * holding
+            #     portval = value + cash
+            #     # print "portval: ", portval
+            #     # print "portvalcurrent: ", portvalcurrent
+                
+            #     r = portval / portvalcurrent - 1
+
+            #     x = disc_indicators[i]
+            #     action = self.learner.query(x, r)
 
         # print portval
         return df_trades.to_frame()
-
-
-def discretize(psma, mom):
-    return psma*10 + mom
 
 if __name__ == "__main__":
     print "One does not simply think up a strategy"
