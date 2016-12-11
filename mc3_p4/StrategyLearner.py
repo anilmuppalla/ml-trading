@@ -14,7 +14,7 @@ class StrategyLearner(object):
     def __init__(self, verbose = False):
         self.verbose = verbose
 
-    def indicators(self, prices, lookback):
+    def indicators(self, prices, lookback, sd, ed):
         sma = pd.rolling_mean(prices, window=lookback)
         psmaratio = prices / sma
         # print psmaratio
@@ -22,10 +22,16 @@ class StrategyLearner(object):
         momentum = prices.copy()
         momentum[:] = 0
         momentum[lookback:] = (prices[lookback:] / prices[:-lookback].values - 1) * 100
-        return psmaratio, momentum
 
-    def disc_learn_indicators(self, prices, psmaratio, momentum):
-   
+        psmaratio = psmaratio[sd:]
+        momentum = momentum[sd:]
+        prices = prices[sd:]
+
+        return prices, psmaratio, momentum
+
+    def disc_learn_indicators(self, prices, lookback, sd, ed):
+        
+        prices, psmaratio, momentum = self.indicators(prices, lookback, sd, ed)
         steps = 10
         stepsize = len(prices) / steps
         
@@ -49,7 +55,9 @@ class StrategyLearner(object):
 
         return indicators    
 
-    def disc_test_indicators(self, prices, psmaratio, momentum):
+    def disc_test_indicators(self, prices, lookback, sd, ed):
+
+        prices, psmaratio, momentum = self.indicators(prices, lookback, sd, ed)
 
         psma_bin = np.searchsorted(self.psma_bins, psmaratio, side='left')
         momentum_bin = np.searchsorted(self.momentum_bins, momentum, side='left')  
@@ -66,11 +74,11 @@ class StrategyLearner(object):
         ed=dt.datetime(2009,1,1), \
         sv = 10000): 
 
-        self.learner = ql.QLearner(num_states=1000,\
+        self.learner = ql.QLearner(num_states=100,\
         num_actions = 3, \
         alpha = 0.2, \
         gamma = 0.9, \
-        rar = 0.98, \
+        rar = 0.99, \
         radr = 0.999, \
         dyna = 0, \
         verbose=False) #initialize the learner
@@ -84,97 +92,67 @@ class StrategyLearner(object):
         
         if self.verbose: print prices
 
+        disc_indicators = self.disc_learn_indicators(prices, lookback, sd, ed)
 
-        psmaratio, momentum = self.indicators(prices, lookback)
-        
-        psmaratio = psmaratio[sd:]
-        momentum = momentum[sd:]
         prices = prices[sd:]
 
-        disc_indicators = self.disc_learn_indicators(prices, psmaratio, momentum)
-
         count = 0
-        totrewardlast = 0
-        totreward = 1
-        while ((totrewardlast != totreward) & (count < 1000)) | (count < 50):
-            totrewardlast = totreward
+        prev_portval = 0
+        converged = False
+        while not converged and count < 1000:
             holding = 0
-            trade = 0
-            value = 0
             cash = sv
             portval = 0
-            pos = 0  # pos = -1: short, pos = 0: nothing, pos = 1: long
+            # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
+            prev_action = 1  # prev_action = -1: short, prev_action = 0: nothing, prev_action = 1: long
             x = disc_indicators[0]
             action = self.learner.querysetstate(x)
             for i in range(1,len(prices)):
                 trade = 0
                 if action == 0:  # Be Short
-                    # if pos == -1:
-                    #     trade = 0
-                    if pos == 0:
-                        # trade = -500
+                    if prev_action == 1:
                         holding -= 500
                         cash += prices[i] * 500
-                    elif pos == 1:
-                        # trade = -1000
+                    elif prev_action == 2:
                         holding -= 1000
                         cash += prices[i] * 1000
-                    pos = -1
-                    # holding = holding + trade
-                    # value = prices[i] * holding
-                    # cash = cash - prices[i] * trade
-                
+                    prev_action = 0
+                   
                 elif action == 1:  # Be Nothing
-                    if pos == -1:
-                        # trade = 500
+                    if prev_action == 0:
                         holding += 500
                         cash -= prices[i] * 500
-                    # elif pos == 0:
-                    #     trade = 0
-                    elif pos == 1:
-                        # trade = -500
+                    elif prev_action == 2:
                         holding -= 500
                         cash += prices[i] * 500
-                    pos = 0
-                    # holding = holding + trade
-                    # value = prices[i] * holding
-                    # cash = cash - prices[i] * trade
-                
+                    prev_action = 1
+                   
                 elif action == 2:  # Be Long
-                    if pos == -1:
-                        # trade = 1000
+                    if prev_action == 0:
                         holding += 1000
                         cash -= prices[i] * 1000
-                    elif pos == 0:
+                    elif prev_action == 1:
                         holding += 500
                         cash -= prices[i] * 500
-                        # trade = 500
-                    # elif pos == 1:
-                    #     trade = 0
-                    pos = 1
-                    # holding = holding + trade
-                    # value = prices[i] * holding
-                    # cash = cash - prices[i]*trade
-
-                if i < (len(prices) - 1):
-                    # holding = holding + trade
+                    prev_action = 2
+                   
+                if i + 1 != len(prices):
                     value = prices[i] * holding
                     portvalcurrent = value + cash
 
-                    value = prices[i+1]*holding
+                    value = prices[i+1] * holding
                     portval = value + cash
 
-                    r = portval/portvalcurrent - 1
+                    r = portval / portvalcurrent - 1
                     x = disc_indicators[i]
 
                     action = self.learner.query(x, r)
 
-            totreward = portval  # calculate portfolio value
+              # calculate portfolio value
+            if prev_portval == portval and count > 50:
+                converged = True
+            prev_portval = portval
             count += 1
-
-        # print count
-        # print totreward
-
 
     # this method should use the existing policy and test it against new data
     def testPolicy(self, symbol = "IBM", \
@@ -188,15 +166,11 @@ class StrategyLearner(object):
         prices_all = ut.get_data(syms, dates)  # automatically adds SPY
         prices = prices_all[symbol]  # only portfolio symbols
         if self.verbose: print prices
-
-        psmaratio, momentum = self.indicators(prices, lookback)
         
-        psmaratio = psmaratio[sd:]
-        momentum = momentum[sd:]
+        disc_indicators = self.disc_test_indicators(prices, lookback, sd, ed)
+
         prices = prices[sd:]
         
-        disc_indicators = self.disc_test_indicators(prices, psmaratio, momentum)
-
         df_trades = prices.copy()
         df_trades[:] = 0
 
@@ -204,46 +178,46 @@ class StrategyLearner(object):
         trade = 0
         value = 0
         cash = sv
-        pos = 0  # pos = -1: short, pos = 0: nothing, pos = 1: long
+        prev_action = 0  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
         x = disc_indicators[0]
         action = self.learner.querysetstate(x)
         for i in range(1, len(prices)):
             df_trades[i] = 0
-
             #Short
             if action == 0:
-
-                if pos == 0:
+                if prev_action == 1:
                     df_trades[i] = -500
                     holding -= 500
                     cash += prices[i] * 500
-                elif pos == 1:
+                elif prev_action == 2:
                     df_trades[i] = -1000
                     holding -= 1000
                     cash += prices[i] * 1000
-                pos = -1
+                prev_action = 0
+            
             #Do Nothing
             elif action == 1:
-                if pos == -1:
+                if prev_action == 0:
                     df_trades[i] = 500
                     holding += 500
                     cash -= prices[i] * 500
-                elif pos == 1:
+                elif prev_action == 2:
                     df_trades[i] = -500
                     holding -= 500
                     cash += prices[i] * 500
-                pos = 0
+                prev_action = 1
+            
             #Long
             elif action == 2:
-                if pos == -1:
+                if prev_action == 0:
                     df_trades[i] = 1000
                     holding += 1000
                     cash -= prices[i] * 1000
-                elif pos == 0:
+                elif prev_action == 1:
                     df_trades[i] = 500
                     holding += 500
                     cash -= prices[i] * 500
-                pos = 1
+                prev_action = 2
 
             if i +1 != len(prices):
 
@@ -258,29 +232,29 @@ class StrategyLearner(object):
 
                 action = self.learner.query(x, r)
             # if action == 0:  # Be Short
-            #     if pos == -1:
+            #     if prev_action == -1:
             #         trade = 0
-            #     elif pos == 0:
+            #     elif prev_action == 0:
             #         trade = -500
-            #     elif pos == 1:
+            #     elif prev_action == 1:
             #         trade = -1000
-            #     pos = -1
+            #     prev_action = -1
             # elif action == 1:  # Be Nothing
-            #     if pos == -1:
+            #     if prev_action == -1:
             #         trade = 500
-            #     elif pos == 0:
+            #     elif prev_action == 0:
             #         trade = 0
-            #     elif pos == 1:
+            #     elif prev_action == 1:
             #         trade = -500
-            #     pos = 0
+            #     prev_action = 0
             # elif action == 2:  # Be Long
-            #     if pos == -1:
+            #     if prev_action == -1:
             #         trade = 1000
-            #     elif pos == 0:
+            #     elif prev_action == 0:
             #         trade = 500
-            #     elif pos == 1:
+            #     elif prev_action == 1:
             #         trade = 0
-            #     pos = 1
+            #     prev_action = 1
             # df_trades[i] = trade
             # if i < (len(prices) - 1):
             #     holding = holding + trade
