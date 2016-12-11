@@ -170,7 +170,7 @@ class StrategyLearner(object):
         disc_indicators = self.disc_test_indicators(prices, lookback, sd, ed)
 
         prices = prices[sd:]
-        
+
         df_trades = prices.copy()
         df_trades[:] = 0
 
@@ -178,7 +178,7 @@ class StrategyLearner(object):
         trade = 0
         value = 0
         cash = sv
-        prev_action = 0  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
+        prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
         x = disc_indicators[0]
         action = self.learner.querysetstate(x)
         for i in range(1, len(prices)):
