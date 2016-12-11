@@ -3,7 +3,7 @@ Template for implementing StrategyLearner  (c) 2016 Tucker Balch
 """
 
 import datetime as dt
-import QLearner_c as ql
+import QLearner as ql
 import pandas as pd
 import numpy as np
 import util as ut
