@@ -49,8 +49,6 @@ class StrategyLearner(object):
 
         prices = prices[sd:]
 
-
-
         return prices, psmaratio, momentum
 
     def disc_learn_indicators(self, prices, lookback, sd, ed):
@@ -148,7 +146,7 @@ class StrategyLearner(object):
                     elif prev_action == 2:
                         shares_holding -= 1000
                         cash += prices[i] * 1000
-                    prev_action = 0
+                    prev_action = action
                 
                 # Do Nothing   
                 elif action == 1:
@@ -158,7 +156,7 @@ class StrategyLearner(object):
                     elif prev_action == 2:
                         shares_holding -= 500
                         cash += prices[i] * 500
-                    prev_action = 1
+                    prev_action = action
                    
                 # Long
                 elif action == 2:
@@ -168,7 +166,7 @@ class StrategyLearner(object):
                     elif prev_action == 1:
                         shares_holding += 500
                         cash -= prices[i] * 500
-                    prev_action = 2
+                    prev_action = action
                    
                 if i + 1 != len(prices):
                     current_value = prices[i] * shares_holding
@@ -229,7 +227,7 @@ class StrategyLearner(object):
                     df_trades[i] = -1000
                     shares_holding -= 1000
                     cash += prices[i] * 1000
-                prev_action = 0
+                prev_action = action
             
             #Do Nothing
             elif action == 1:
@@ -241,7 +239,7 @@ class StrategyLearner(object):
                     df_trades[i] = -500
                     shares_holding -= 500
                     cash += prices[i] * 500
-                prev_action = 1
+                prev_action = action
             
             #Long
             elif action == 2:
@@ -253,7 +251,7 @@ class StrategyLearner(object):
                     df_trades[i] = 500
                     shares_holding += 500
                     cash -= prices[i] * 500
-                prev_action = 2
+                prev_action = action
 
             if i+1 != len(prices):
 
