@@ -9,11 +9,11 @@ class QLearner(object):
 
     def __init__(self, \
         num_states=100, \
-        num_actions = 4, \
+        num_actions = 3, \
         alpha = 0.2, \
         gamma = 0.9, \
-        rar = 0.5, \
-        radr = 0.99, \
+        rar = 0.99, \
+        radr = 0.999, \
         dyna = 0, \
         verbose = False):
 
