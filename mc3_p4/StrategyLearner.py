@@ -36,7 +36,6 @@ class StrategyLearner(object):
         bbp = (prices - bottom_band) / (top_band - bottom_band)
         bbp = bbp.fillna(method ='bfill')
     
-
         # Momentum
         momentum = prices.copy()
         momentum[:] = 0
@@ -85,12 +84,6 @@ class StrategyLearner(object):
         indicators.reset_index(drop=True)
         return indicators
 
-        # indicators = []
-        # for i in range(len(psma_bin)):
-        #     indicators.append(psma_bin[i]*10 + momentum_bin[i])
-
-        # return indicators    
-
     def disc_test_indicators(self, prices, lookback, sd, ed):
         """
         return discretized indicators for test
@@ -103,8 +96,6 @@ class StrategyLearner(object):
         indicators['Mom'] = np.searchsorted(self.momentum_bins, momentum, side='left')  
 
         indicators['Label'] = indicators['PSMA'] * 10 + indicators['Mom']
-        # for i in range(len(psma_bin)):
-        #     indicators.append(psma_bin[i]*10 + momentum_bin[i])
         indicators.reset_index(drop=True)
         return indicators
 
@@ -190,10 +181,6 @@ class StrategyLearner(object):
         prices = prices[sd:]
         df_trades = pd.DataFrame(0,columns = [symbol,],index = prices.index)
 
-        # shares_holding = 0
-        # cash = sv
-        
-        # prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
         shares = 0
         prev_shares= 0
         for i in range(len(prices)):
@@ -206,49 +193,7 @@ class StrategyLearner(object):
                 shares = 500
             df_trades.iloc[i][symbol] = shares - prev_shares
             prev_shares = shares
-        
-        # for i in range(1, len(prices)):
-        #     df_trades[i] = 0
             
-        #     #Short
-        #     if action == 0:
-        #         if prev_action == 1:
-        #             df_trades[i] = -500
-        #             shares_holding -= 500
-        #             cash += prices[i] * 500
-        #         elif prev_action == 2:
-        #             df_trades[i] = -1000
-        #             shares_holding -= 1000
-        #             cash += prices[i] * 1000
-        #         prev_action = action
-            
-        #     #Do Nothing
-        #     elif action == 1:
-        #         if prev_action == 0:
-        #             df_trades[i] = 500
-        #             shares_holding += 500
-        #             cash -= prices[i] * 500
-        #         elif prev_action == 2:
-        #             df_trades[i] = -500
-        #             shares_holding -= 500
-        #             cash += prices[i] * 500
-        #         prev_action = action
-            
-        #     #Long
-        #     elif action == 2:
-        #         if prev_action == 0:
-        #             df_trades[i] = 1000
-        #             shares_holding += 1000
-        #             cash -= prices[i] * 1000
-        #         elif prev_action == 1:
-        #             df_trades[i] = 500
-        #             shares_holding += 500
-        #             cash -= prices[i] * 500
-        #         prev_action = action            
-                
-        #     state = disc_indicators[i]
-        #     action = self.learner.querysetstate(state)
-
         return df_trades
 
 if __name__ == "__main__":
