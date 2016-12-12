@@ -73,13 +73,23 @@ class StrategyLearner(object):
             self.momentum_bins[i] = data[int(i * stepsize)]
 
         psma_bin = np.searchsorted(self.psma_bins, psmaratio, side='left')
-        momentum_bin = np.searchsorted(self.momentum_bins, momentum, side='left')  
+        momentum_bin = np.searchsorted(self.momentum_bins, momentum, side='left')
 
-        indicators = []
-        for i in range(len(psma_bin)):
-            indicators.append(psma_bin[i]*10 + momentum_bin[i])
+        indicators = pd.DataFrame(0,columns = ['PSMA','Mom', 'Label'],index = prices.index)
 
-        return indicators    
+        indicators['PSMA'] = np.searchsorted(self.psma_bins, psmaratio, side='left')
+        indicators['Mom'] = np.searchsorted(self.momentum_bins, momentum, side='left')  
+
+        indicators['Label'] = indicators['PSMA'] * 10 + indicators['Mom']
+
+        indicators.reset_index(drop=True)
+        return indicators
+
+        # indicators = []
+        # for i in range(len(psma_bin)):
+        #     indicators.append(psma_bin[i]*10 + momentum_bin[i])
+
+        # return indicators    
 
     def disc_test_indicators(self, prices, lookback, sd, ed):
         """
@@ -87,14 +97,16 @@ class StrategyLearner(object):
         """
         prices, psmaratio, momentum = self.indicators(prices, lookback, sd, ed)
 
-        psma_bin = np.searchsorted(self.psma_bins, psmaratio, side='left')
-        momentum_bin = np.searchsorted(self.momentum_bins, momentum, side='left')  
+        indicators = pd.DataFrame(0,columns = ['PSMA','Mom', 'Label'],index = prices.index)
 
-        indicators = []
-        for i in range(len(psma_bin)):
-            indicators.append(psma_bin[i]*10 + momentum_bin[i])
+        indicators['PSMA'] = np.searchsorted(self.psma_bins, psmaratio, side='left')
+        indicators['Mom'] = np.searchsorted(self.momentum_bins, momentum, side='left')  
 
-        return indicators 
+        indicators['Label'] = indicators['PSMA'] * 10 + indicators['Mom']
+        # for i in range(len(psma_bin)):
+        #     indicators.append(psma_bin[i]*10 + momentum_bin[i])
+        indicators.reset_index(drop=True)
+        return indicators
 
     # this method should create a QLearner, and train it for trading
     def addEvidence(self, symbol = "IBM", \
@@ -102,14 +114,7 @@ class StrategyLearner(object):
         ed=dt.datetime(2009,1,1), \
         sv = 10000): 
 
-        self.learner = ql.QLearner(num_states=100,\
-        num_actions = 3, \
-        alpha = 0.2, \
-        gamma = 0.9, \
-        rar = 0.99, \
-        radr = 0.999, \
-        dyna = 0, \
-        verbose=False) #initialize the learner
+        self.learner = ql.QLearner() #initialize the learner
 
         lookback = 14
         syms=[symbol]
@@ -132,14 +137,14 @@ class StrategyLearner(object):
         converged = False
         prev_shares = 0
 
-        while not converged and count < 1000:
+        while not converged and count < 50:
             # shares_holding = 0
             # cash = sv
             # portval = sv
             # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long 
             # prev_action = 1 # start with do nothing
 
-            state = disc_indicators[0]
+            state = disc_indicators.iloc[0]['Label']
             action = self.learner.querysetstate(state)
             shares = 0
             if action == 0:
@@ -162,7 +167,7 @@ class StrategyLearner(object):
                 portval -= (shares - prev_shares) * prices[i]
                 prev_shares = shares
 
-                state = disc_indicators[i]
+                state = disc_indicators.iloc[i]['Label']
                 action = self.learner.query(state,reward)
             # for i in range(1, len(prices)):
                 # Short
@@ -213,7 +218,7 @@ class StrategyLearner(object):
 
               # check for convergence
             
-            if prev_portval == portval and count > 10:
+            if prev_portval == portval and count > 5:
                 converged = True
             prev_portval = portval
             count += 1
@@ -232,9 +237,9 @@ class StrategyLearner(object):
         
         # discretized indicators for test using the bins from learning
         disc_indicators = self.disc_test_indicators(prices, lookback, sd, ed)
+        print disc_indicators
         prices = prices[sd:]
-        df_trades = prices.copy()
-        df_trades[:] = 0
+        df_trades = pd.DataFrame(0,columns = [symbol,],index = prices.index)
 
         # shares_holding = 0
         # cash = sv
@@ -243,17 +248,15 @@ class StrategyLearner(object):
         shares = 0
         prev_shares= 0
         for i in range(len(prices)):
-            state = disc_indicators[i]
+            state = disc_indicators.iloc[i]['Label']
             action = self.learner.querysetstate(state)
             shares = 0
             if action == 0:
                 shares = -500
             elif action == 2:
                 shares = 500
-            df_trades[i] = shares - prev_shares
+            df_trades.iloc[i][symbol] = shares - prev_shares
             prev_shares = shares
-
-
         
         # for i in range(1, len(prices)):
         #     df_trades[i] = 0
@@ -297,7 +300,7 @@ class StrategyLearner(object):
         #     state = disc_indicators[i]
         #     action = self.learner.querysetstate(state)
 
-        return df_trades.to_frame()
+        return df_trades
 
 if __name__ == "__main__":
     print "Strategy! Strategy! Strategy!"
