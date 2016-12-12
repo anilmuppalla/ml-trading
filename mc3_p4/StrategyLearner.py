@@ -137,13 +137,8 @@ class StrategyLearner(object):
         converged = False
         prev_shares = 0
 
-        while not converged and count <100:
-            print count
-            # shares_holding = 0
-            # cash = sv
-            # portval = sv
-            # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long 
-            # prev_action = 1 # start with do nothing
+        while not converged:
+            # print count
             portval = sv
             state = disc_indicators.iloc[0]['Label']
             action = self.learner.querysetstate(state)
@@ -170,58 +165,10 @@ class StrategyLearner(object):
 
                 state = disc_indicators.iloc[i]['Label']
                 action = self.learner.query(state,reward)
-            # for i in range(1, len(prices)):
-                # Short
-                # if action == 0:
-                #     if prev_action == 1:
-                #         shares_holding -= 500
-                #         cash += prices[i] * 500
-                #     elif prev_action == 2:
-                #         shares_holding -= 1000
-                #         cash += prices[i] * 1000
-                #     prev_action = action
-                
-                # # Do Nothing   
-                # elif action == 1:
-                #     if prev_action == 0:
-                #         shares_holding += 500
-                #         cash -= prices[i] * 500
-                #     elif prev_action == 2:
-                #         shares_holding -= 500
-                #         cash += prices[i] * 500
-                #     prev_action = action
-                   
-                # # Long
-                # elif action == 2:
-                #     if prev_action == 0:
-                #         shares_holding += 1000
-                #         cash -= prices[i] * 1000
-                #     elif prev_action == 1:
-                #         shares_holding += 500
-                #         cash -= prices[i] * 500
-                #     prev_action = action
-                   
-                # if i + 1 != len(prices):
-                #     current_value = prices[i] * shares_holding
-                #     portvalcurrent = current_value + cash
-
-                #     value = prices[i+1] * shares_holding
-                #     portval = value + cash
-
-                #     reward = portval / portvalcurrent - 1
-
-
-
-                    
-                #     state = disc_indicators[i]
-
-                #     action = self.learner.query(state, reward)
-
-              # check for convergence
             
             if prev_portval == portval and count > 5:
                 converged = True
-            print prev_portval, portval
+            # print prev_portval, portval
             prev_portval = portval
             count += 1
 
