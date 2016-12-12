@@ -160,6 +160,7 @@ class StrategyLearner(object):
                     shares = -500
 
                 portval -= (shares - prev_shares) * prices[i]
+                prev_shares = shares
 
                 state = disc_indicators[i]
                 action = self.learner.query(state,reward)
@@ -235,55 +236,66 @@ class StrategyLearner(object):
         df_trades = prices.copy()
         df_trades[:] = 0
 
-        shares_holding = 0
-        cash = sv
+        # shares_holding = 0
+        # cash = sv
         
-        prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
-        
-        state = disc_indicators[0]
-        action = self.learner.querysetstate(state)
-        
-        for i in range(1, len(prices)):
-            df_trades[i] = 0
-            
-            #Short
-            if action == 0:
-                if prev_action == 1:
-                    df_trades[i] = -500
-                    shares_holding -= 500
-                    cash += prices[i] * 500
-                elif prev_action == 2:
-                    df_trades[i] = -1000
-                    shares_holding -= 1000
-                    cash += prices[i] * 1000
-                prev_action = action
-            
-            #Do Nothing
-            elif action == 1:
-                if prev_action == 0:
-                    df_trades[i] = 500
-                    shares_holding += 500
-                    cash -= prices[i] * 500
-                elif prev_action == 2:
-                    df_trades[i] = -500
-                    shares_holding -= 500
-                    cash += prices[i] * 500
-                prev_action = action
-            
-            #Long
-            elif action == 2:
-                if prev_action == 0:
-                    df_trades[i] = 1000
-                    shares_holding += 1000
-                    cash -= prices[i] * 1000
-                elif prev_action == 1:
-                    df_trades[i] = 500
-                    shares_holding += 500
-                    cash -= prices[i] * 500
-                prev_action = action
-                
+        # prev_action = 1  # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long
+        shares = 0
+        prev_shares= 0
+        for i in range(len(prices)):
             state = disc_indicators[i]
             action = self.learner.querysetstate(state)
+            shares = 0
+            if action == 0:
+                shares = -500
+            elif action == 2:
+                shares = 500
+            df_trades[i] = shares - prev_shares
+            prev_shares = shares
+
+
+        
+        # for i in range(1, len(prices)):
+        #     df_trades[i] = 0
+            
+        #     #Short
+        #     if action == 0:
+        #         if prev_action == 1:
+        #             df_trades[i] = -500
+        #             shares_holding -= 500
+        #             cash += prices[i] * 500
+        #         elif prev_action == 2:
+        #             df_trades[i] = -1000
+        #             shares_holding -= 1000
+        #             cash += prices[i] * 1000
+        #         prev_action = action
+            
+        #     #Do Nothing
+        #     elif action == 1:
+        #         if prev_action == 0:
+        #             df_trades[i] = 500
+        #             shares_holding += 500
+        #             cash -= prices[i] * 500
+        #         elif prev_action == 2:
+        #             df_trades[i] = -500
+        #             shares_holding -= 500
+        #             cash += prices[i] * 500
+        #         prev_action = action
+            
+        #     #Long
+        #     elif action == 2:
+        #         if prev_action == 0:
+        #             df_trades[i] = 1000
+        #             shares_holding += 1000
+        #             cash -= prices[i] * 1000
+        #         elif prev_action == 1:
+        #             df_trades[i] = 500
+        #             shares_holding += 500
+        #             cash -= prices[i] * 500
+        #         prev_action = action            
+                
+        #     state = disc_indicators[i]
+        #     action = self.learner.querysetstate(state)
 
         return df_trades.to_frame()
 
