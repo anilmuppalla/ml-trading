@@ -176,6 +176,7 @@ class StrategyLearner(object):
                     portval = value + cash
 
                     reward = portval / portvalcurrent - 1
+                    
                     state = disc_indicators[i]
 
                     action = self.learner.query(state, reward)
@@ -200,9 +201,7 @@ class StrategyLearner(object):
         
         # discretized indicators for test using the bins from learning
         disc_indicators = self.disc_test_indicators(prices, lookback, sd, ed)
-
         prices = prices[sd:]
-
         df_trades = prices.copy()
         df_trades[:] = 0
 
@@ -253,18 +252,18 @@ class StrategyLearner(object):
                     cash -= prices[i] * 500
                 prev_action = action
 
-            if i+1 != len(prices):
+            # if i+1 != len(prices):
 
-                current_value = prices[i] * shares_holding
-                portvalcurrent = current_value + cash
+            #     current_value = prices[i] * shares_holding
+            #     portvalcurrent = current_value + cash
 
-                value = prices[i+1] * shares_holding
-                portval = value + cash
+            #     value = prices[i+1] * shares_holding
+            #     portval = value + cash
 
-                reward = portval / portvalcurrent - 1
-                state = disc_indicators[i]
-
-                action = self.learner.query(state, reward)
+            #     reward = portval / portvalcurrent - 1
+                
+            state = disc_indicators[i]
+            action = self.learner.querysetstate(state)
 
         return df_trades.to_frame()
 
