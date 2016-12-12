@@ -137,13 +137,14 @@ class StrategyLearner(object):
         converged = False
         prev_shares = 0
 
-        while not converged and count < 50:
+        while not converged and count <100:
+            print count
             # shares_holding = 0
             # cash = sv
             # portval = sv
             # prev_action = 0: short, prev_action = 1: nothing, prev_action = 2: long 
             # prev_action = 1 # start with do nothing
-
+            portval = sv
             state = disc_indicators.iloc[0]['Label']
             action = self.learner.querysetstate(state)
             shares = 0
@@ -220,6 +221,7 @@ class StrategyLearner(object):
             
             if prev_portval == portval and count > 5:
                 converged = True
+            print prev_portval, portval
             prev_portval = portval
             count += 1
 
