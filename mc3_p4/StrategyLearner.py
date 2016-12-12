@@ -148,15 +148,15 @@ class StrategyLearner(object):
                         cash += prices[i] * 1000
                     prev_action = action
                 
-                # # Do Nothing   
-                # elif action == 1:
-                #     if prev_action == 0:
-                #         shares_holding += 500
-                #         cash -= prices[i] * 500
-                #     elif prev_action == 2:
-                #         shares_holding -= 500
-                #         cash += prices[i] * 500
-                #     prev_action = action
+                # Do Nothing   
+                elif action == 1:
+                    if prev_action == 0:
+                        shares_holding += 500
+                        cash -= prices[i] * 500
+                    elif prev_action == 2:
+                        shares_holding -= 500
+                        cash += prices[i] * 500
+                    prev_action = action
                    
                 # Long
                 elif action == 2:
@@ -228,17 +228,17 @@ class StrategyLearner(object):
                     cash += prices[i] * 1000
                 prev_action = action
             
-            # #Do Nothing
-            # elif action == 1:
-            #     if prev_action == 0:
-            #         df_trades[i] = 500
-            #         shares_holding += 500
-            #         cash -= prices[i] * 500
-            #     elif prev_action == 2:
-            #         df_trades[i] = -500
-            #         shares_holding -= 500
-            #         cash += prices[i] * 500
-            #     prev_action = action
+            #Do Nothing
+            elif action == 1:
+                if prev_action == 0:
+                    df_trades[i] = 500
+                    shares_holding += 500
+                    cash -= prices[i] * 500
+                elif prev_action == 2:
+                    df_trades[i] = -500
+                    shares_holding -= 500
+                    cash += prices[i] * 500
+                prev_action = action
             
             #Long
             elif action == 2:
