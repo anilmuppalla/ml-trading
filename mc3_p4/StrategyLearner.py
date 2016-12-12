@@ -18,9 +18,25 @@ class StrategyLearner(object):
         """
         return : prices, psma, momentum
         """
+        # MACD
+        ema_slow = pd.ewma(prices, span=26, min_periods = 11)
+        ema_fast = pd.ewma(prices, span=12, min_periods = 11)
+        macd = ema_fast - ema_slow
+        signal = pd.ewma(macd, span=9)
+        macdDiff = macd - signal
+        
+        # SMA
         sma = pd.rolling_mean(prices, window=lookback)
         psmaratio = prices / sma
-        # print psmaratio
+
+        # BBP
+        rolling_std = pd.rolling_std(prices,window=lookback,min_periods=lookback)
+        top_band = sma + (2 * rolling_std)
+        bottom_band = sma - (2 * rolling_std)
+        bbp = (prices - bottom_band) / (top_band - bottom_band)
+        bbp = bbp.fillna(method ='bfill')
+    
+
         # Momentum
         momentum = prices.copy()
         momentum[:] = 0
@@ -28,7 +44,12 @@ class StrategyLearner(object):
 
         psmaratio = psmaratio[sd:]
         momentum = momentum[sd:]
+        macd = macd[sd:]
+        bbp = bbp[sd:]
+
         prices = prices[sd:]
+
+
 
         return prices, psmaratio, momentum
 
@@ -118,7 +139,7 @@ class StrategyLearner(object):
             prev_action = 1 # start with do nothing
             state = disc_indicators[0]
             action = self.learner.querysetstate(state)
-            for i in range(1,len(prices)):
+            for i in range(1, len(prices)):
                 # Short
                 if action == 0:
                     if prev_action == 1:
@@ -130,14 +151,14 @@ class StrategyLearner(object):
                     prev_action = 0
                 
                 # Do Nothing   
-                # elif action == 1:
-                #     if prev_action == 0:
-                #         shares_holding += 500
-                #         cash -= prices[i] * 500
-                #     elif prev_action == 2:
-                #         shares_holding -= 500
-                #         cash += prices[i] * 500
-                #     prev_action = 1
+                elif action == 1:
+                    if prev_action == 0:
+                        shares_holding += 500
+                        cash -= prices[i] * 500
+                    elif prev_action == 2:
+                        shares_holding -= 500
+                        cash += prices[i] * 500
+                    prev_action = 1
                    
                 # Long
                 elif action == 2:
@@ -197,6 +218,7 @@ class StrategyLearner(object):
         
         for i in range(1, len(prices)):
             df_trades[i] = 0
+            
             #Short
             if action == 0:
                 if prev_action == 1:
@@ -209,17 +231,17 @@ class StrategyLearner(object):
                     cash += prices[i] * 1000
                 prev_action = 0
             
-            # #Do Nothing
-            # elif action == 1:
-            #     if prev_action == 0:
-            #         df_trades[i] = 500
-            #         shares_holding += 500
-            #         cash -= prices[i] * 500
-            #     elif prev_action == 2:
-            #         df_trades[i] = -500
-            #         shares_holding -= 500
-            #         cash += prices[i] * 500
-            #     prev_action = 1
+            #Do Nothing
+            elif action == 1:
+                if prev_action == 0:
+                    df_trades[i] = 500
+                    shares_holding += 500
+                    cash -= prices[i] * 500
+                elif prev_action == 2:
+                    df_trades[i] = -500
+                    shares_holding -= 500
+                    cash += prices[i] * 500
+                prev_action = 1
             
             #Long
             elif action == 2:
@@ -241,7 +263,7 @@ class StrategyLearner(object):
                 value = prices[i+1] * shares_holding
                 portval = value + cash
 
-                reward = portval/portvalcurrent - 1
+                reward = portval / portvalcurrent - 1
                 state = disc_indicators[i]
 
                 action = self.learner.query(state, reward)
