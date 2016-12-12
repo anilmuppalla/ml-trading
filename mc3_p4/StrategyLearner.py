@@ -137,6 +137,10 @@ class StrategyLearner(object):
             prev_action = 1 # start with do nothing
             state = disc_indicators[0]
             action = self.learner.querysetstate(state)
+
+            current_value = prices[0] * shares_holding
+            portvalcurrent = current_value + cash
+
             for i in range(1, len(prices)):
                 # Short
                 if action == 0:
@@ -167,23 +171,35 @@ class StrategyLearner(object):
                         shares_holding += 500
                         cash -= prices[i] * 500
                     prev_action = action
-                   
-                if i + 1 != len(prices):
-                    current_value = prices[i] * shares_holding
-                    portvalcurrent = current_value + cash
+                
+                value = prices[i] * shares_holding
+                portval = value + cash
+                # print portval
+                reward = portval / portvalcurrent - 1
 
-                    value = prices[i+1] * shares_holding
-                    portval = value + cash
+                state = disc_indicators[i]
+                
+                action = self.learner.query(state, reward)
 
-                    reward = portval / portvalcurrent - 1
+                portvalcurrent = portval
+
+                # if i + 1 != len(prices):
+                #     current_value = prices[i] * shares_holding
+                #     portvalcurrent = current_value + cash
+
+                #     value = prices[i+1] * shares_holding
+                #     portval = value + cash
+
+                #     reward = portval / portvalcurrent - 1
                     
-                    state = disc_indicators[i]
+                #     state = disc_indicators[i]
 
-                    action = self.learner.query(state, reward)
+                #     action = self.learner.query(state, reward)
 
               # check for convergence
             if prev_portval == portval and count > 50:
                 converged = True
+                print count
             prev_portval = portval
             count += 1
 
