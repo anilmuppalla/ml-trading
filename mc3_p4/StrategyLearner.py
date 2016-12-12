@@ -168,18 +168,14 @@ class StrategyLearner(object):
                         cash -= prices[i] * 500
                     prev_action = action
                    
-                if i + 1 != len(prices):
-                    current_value = prices[i] * shares_holding
-                    portvalcurrent = current_value + cash
-
-                    value = prices[i+1] * shares_holding
-                    portval = value + cash
-
-                    reward = portval / portvalcurrent - 1
-                    
-                    state = disc_indicators[i]
-
-                    action = self.learner.query(state, reward)
+                # if i + 1 != len(prices):
+                current_value = prices[i-1] * shares_holding
+                portvalcurrent = current_value + cash
+                value = prices[i] * shares_holding
+                portval = value + cash
+                reward = portval / portvalcurrent - 1
+                state = disc_indicators[i]
+                action = self.learner.query(state, reward)
 
               # check for convergence
             if prev_portval == portval and count > 50:
