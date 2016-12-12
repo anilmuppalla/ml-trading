@@ -154,7 +154,7 @@ class StrategyLearner(object):
             portval -= shares * prices[0]
 
             for i in range(1,len(prices)):
-
+                shares = 0
                 change = (prices[i] - prices[i-1]) * 500
                 reward = 0
                 if action == 2: #Long
